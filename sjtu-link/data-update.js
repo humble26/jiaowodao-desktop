@@ -154,6 +154,9 @@
 
   /** 注入远程数据脚本（经典 script 无跨域限制，无需 CORS） */
   function loadRemoteScripts(onDone) {
+    // 防御：远端文件列表为空时不会触发任何 script 回调，
+    // 若不提前结束，会令 checkUpdate 的 checking 永久为 true（更新功能卡死）。
+    if (!REMOTE_FILES.length) { onDone(null); return; }
     var saved = {
       data: window.JIAOWODAO_DATA,
       meta: window.JIAOWODAO_META,
@@ -215,8 +218,11 @@
     for (var k = 0; k < remote.data.length; k++) baseItems.push(remote.data[k]);
     for (var m = 0; m < remote.clubs.length; m++) clubItems.push(remote.clubs[m]);
 
-    saveCache(buildCache(window.JIAOWODAO_META, window.JIAOWODAO_CLUB_META,
+    // 保存缓存；若 localStorage 写入失败（如配额已满），新数据仅驻留内存，
+    // 下次启动会回退到旧缓存。显式提示用户，避免"看似已更新实则未持久化"。
+    var cacheSaved = saveCache(buildCache(window.JIAOWODAO_META, window.JIAOWODAO_CLUB_META,
                          remote.data, remote.clubs));
+    if (!cacheSaved) showToast(t('updateCacheFail'));
 
     // 记录更新日志（日期/版本/条数变化/来源）
     writeUpdateLog(appendLogEntry(

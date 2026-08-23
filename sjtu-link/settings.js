@@ -14,13 +14,40 @@
     'jiaowodao_favs',
     'jiaowodao_use_stats',
     'jiaowodao_custom_links',
-    'jiaowodao_sort_enabled'
+    'jiaowodao_sort_enabled',
+    'jiaowodao_events',            // 自定义日程（倒计时）
+    'jiaowodao_disclaimer',        // 免责声明"不再显示"勾选
+    'jiaowodao_fav_side_open'      // 收藏侧栏展开状态
   ];
 
   /* ---------- 版本与更新说明 ---------- */
-  var VERSION = '2.4.4';
-  var RELEASE_DATE = '2026-08-15';
+  var VERSION = '2.5.0';
+  var RELEASE_DATE = '2026-08-22';
   var CHANGELOG = [
+    {
+      ver: '2.5.0',
+      date: '2026-08-22',
+      zh: [
+        '修复：数据更新在极端情况（远端文件列表为空）下更新功能卡死；缓存写入失败现会显式提示',
+        '修复：收藏侧栏项由不合法的 <a> 内嵌 <button> 改为兄弟结构，修正无效嵌套并保留整行直达',
+        '修复：关闭「常用优先」后恢复顺序的比较器违反传递性，可能导致顺序不定',
+        '修复：「清空本地数据」现同时清理自定义日程、免责声明勾选与收藏侧栏开关',
+        '修复：免责声明正文 HTML 渲染改为转义+白名单（<br>/<b>），杜绝文案注入为 XSS',
+        '修复：倒计时天数改用 UTC 归一化计算，避免时区/夏令时导致的 ±1 天偏差',
+        '修复：二维码生成临时改写库的全局编码函数，现用后即恢复，不再污染其它调用',
+        '搜索与排序的同分项现按名称二次排序，结果更稳定可预期'
+      ],
+      en: [
+        'Fix: data update could hang if the remote file list was empty; cache-save failures are now surfaced',
+        'Fix: favorites sidebar items changed from invalid <a>-wrapping-<button> to sibling nodes; full-row navigation preserved',
+        'Fix: comparator when restoring base order violated transitivity, causing unstable ordering',
+        'Fix: "Clear local data" now also clears custom events, the disclaimer checkbox and the sidebar toggle',
+        'Fix: disclaimer body HTML is now escaped then allow-listed (<br>/<b>) to prevent XSS via text injection',
+        'Fix: countdown day diff now normalized via UTC to avoid +/-1 day errors around DST/timezone shifts',
+        'Fix: QR generation temporarily patches the library global encoder, now restored after use',
+        'Search/sort ties are now broken by name for stable, predictable ordering'
+      ]
+    },
     {
       ver: '2.4.4',
       date: '2026-08-15',
@@ -235,6 +262,7 @@
   var mask = null;
   var pendingClear = false;
 
+  /** 依据已保存的字体档位设置根元素 font-size（rem 整体缩放） */
   function applyFont(key) {
     document.documentElement.style.fontSize = fontPx(key) + 'px';
   }
@@ -398,6 +426,7 @@
     renderPanel();
   }
 
+  /** 生成一组分段按钮（seg），高亮 activeKey，并绑定选择回调 */
   function segButtons(container, options, activeKey, onClick) {
     container.innerHTML = '';
     options.forEach(function (opt) {
@@ -414,6 +443,7 @@
     });
   }
 
+  /** 重绘整个设置面板（字体/宠物/排序/自定义/日程/数据/日志/关于） */
   function renderPanel() {
     // 字体
     var fk = getFontKey();

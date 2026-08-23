@@ -563,8 +563,8 @@
 
     }
   </style>
-<link rel="stylesheet" href="search-plus.css?v=2.4.4">
-<link rel="stylesheet" href="settings.css?v=2.4.4">
+<link rel="stylesheet" href="search-plus.css?v=2.5.0">
+<link rel="stylesheet" href="settings.css?v=2.5.0">
 </head>
 <body>
 <script>
@@ -722,8 +722,8 @@
 </div>
 <button id="pet-recall-btn" class="hidden-recall" aria-label="召唤导导" title="召唤导导">🐦</button>
 
-<script src="data/jiaowodao-data.js?v=2.4.4"></script>
-<script src="data/jiaowodao-clubs.js?v=2.4.4"></script>
+<script src="data/jiaowodao-data.js?v=2.5.0"></script>
+<script src="data/jiaowodao-clubs.js?v=2.5.0"></script>
 <script>
   // 数据在线更新缓存优先：若本地存储中有更新版数据，覆盖磁盘文件
   (function () {
@@ -787,6 +787,7 @@ const i18n = {
     updateAutoDone: '已自动更新数据至 ${date}，共 ${count} 条',
     updateFailed: '检查更新失败，请检查网络',
     updateLocalNewer: '本地数据已是最新',
+    updateCacheFail: '未能持久化缓存，更新仅本次生效',
     disclaimerTitle: '免责声明',
     disclaimerAlert: '本应用为非官方个人项目，与上海交通大学及其下属部门无关，不代表学校立场。',
     disclaimerTag: '重要提示',
@@ -939,6 +940,7 @@ const i18n = {
     updateAutoDone: 'Data auto-updated to ${date} (${count} items)',
     updateFailed: 'Update check failed, check your network',
     updateLocalNewer: 'Local data is already the newest',
+    updateCacheFail: 'Failed to persist cache; this update applies for the current session only',
     disclaimerTitle: 'Disclaimer',
     disclaimerAlert: 'This app is an unofficial personal project and is not affiliated with or endorsed by Shanghai Jiao Tong University.',
     disclaimerTag: 'IMPORTANT',
@@ -1961,16 +1963,16 @@ renderGrid();
 })();
 </script>
 
-<script src="search-plus.js?v=2.4.4"></script>
-<script src="data/pinyin-map.js?v=2.4.4"></script>
-<script src="data-update.js?v=2.4.4"></script>
-<script src="disclaimer.js?v=2.4.4"></script>
-<script src="contextmenu.js?v=2.4.4"></script>
-<script src="settings.js?v=2.4.4"></script>
-<script src="favorites.js?v=2.4.4"></script>
-<script src="countdown.js?v=2.4.4"></script>
-<script src="qrcode.js?v=2.4.4"></script>
-<script src="qrcode-share.js?v=2.4.4"></script>
+<script src="search-plus.js?v=2.5.0"></script>
+<script src="data/pinyin-map.js?v=2.5.0"></script>
+<script src="data-update.js?v=2.5.0"></script>
+<script src="disclaimer.js?v=2.5.0"></script>
+<script src="contextmenu.js?v=2.5.0"></script>
+<script src="settings.js?v=2.5.0"></script>
+<script src="favorites.js?v=2.5.0"></script>
+<script src="countdown.js?v=2.5.0"></script>
+<script src="qrcode.js?v=2.5.0"></script>
+<script src="qrcode-share.js?v=2.5.0"></script>
 
 <script>
   // 桌面版：站外链接交给系统默认浏览器打开

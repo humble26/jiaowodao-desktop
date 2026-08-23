@@ -31,8 +31,12 @@
   }
 
   function sortByStatsPure(items, stats) {
+    // 同分时以名称做 tiebreaker，保证排序稳定性，
+    // 避免未进快照的自定义链接比较器违反传递性导致顺序不定。
     return (items || []).slice().sort(function (a, b) {
-      return ((stats && stats[b.name]) || 0) - ((stats && stats[a.name]) || 0);
+      var d = ((stats && stats[b.name]) || 0) - ((stats && stats[a.name]) || 0);
+      if (d !== 0) return d;
+      return (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
     });
   }
 
@@ -166,6 +170,10 @@
       items.sort(function (a, b) {
         var ia = order[a.name];
         var ib = order[b.name];
+        if (ia === undefined && ib === undefined) {
+          // 均未进快照（通常是自定义链接）：退回名称比较，保证稳定
+          return (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
+        }
         if (ia === undefined) return 1;
         if (ib === undefined) return -1;
         return ia - ib;
@@ -212,10 +220,12 @@
   }
 
   /* ---------- 收藏 ---------- */
+  /** 判断 name 是否已收藏 */
   function isFav(name) {
     return loadFavs().indexOf(name) >= 0;
   }
 
+  /** 切换 name 的收藏状态：更新焦点列表、重绘星标与侧栏并通知模块变化 */
   function toggleFav(name) {
     if (!name) return;
     var arr = toggleFavPure(loadFavs(), name);
@@ -227,12 +237,14 @@
   }
 
   /* ---------- 统计 ---------- */
+  /** 为 name 的使用次数 +1（供「常用优先」排序使用） */
   function bumpStat(name) {
     if (!name) return;
     saveStats(bumpStatPure(loadStats(), name));
   }
 
   /* ---------- 卡片星标装饰 ---------- */
+  /** 为尚未装饰的卡片注入星标按钮，并同步收藏状态 */
   function decorateGrid() {
     var cards = document.querySelectorAll('#grid .card');
     for (var i = 0; i < cards.length; i++) {
@@ -259,6 +271,7 @@
     updateStars();
   }
 
+  /** 依据收藏列表统一刷新所有卡片的星标高亮与提示文案 */
   function updateStars() {
     var favs = loadFavs();
     var stars = document.querySelectorAll('#grid .card-star');
@@ -272,6 +285,7 @@
   /* ---------- 收藏侧边栏 ---------- */
   var sideEl = null;
 
+  /** 侧栏默认展开；用户收起后存 localStorage 以便下次保持 */
   function sideOpen() {
     try {
       return (typeof localStorage !== 'undefined' && localStorage.getItem('jiaowodao_fav_side_open')) !== '0';
@@ -280,6 +294,7 @@
     }
   }
 
+  /** 展开/收起侧栏并写入本地偏好 */
   function setSideOpen(open) {
     try {
       if (typeof localStorage !== 'undefined') {
@@ -289,6 +304,7 @@
     if (sideEl) sideEl.classList.toggle('open', open);
   }
 
+  /** 惰性创建侧栏 DOM 并绑定展开/收起按钮；返回侧栏节点 */
   function ensureSide() {
     if (sideEl) return sideEl;
     sideEl = document.createElement('aside');
@@ -358,13 +374,14 @@
         '<span class="fav-avatar" style="background:' + avatarBg + ';color:' + avatarColor + '">' + escHtml(first) + '</span>' +
         '<span class="fav-name">' + escHtml(it.name) + '</span>' +
         '<span class="badge' + (it.type === 'wechat' ? ' wechat' : it.type === 'club' ? ' club' : '') + '">' + escHtml(badge) + '</span>';
-      if (it.url) {
-        html += '<a class="fav-item" href="' + escHtml(it.url) + '" target="_blank" rel="noopener noreferrer" data-name="' + escHtml(it.name) + '">' +
-          inner + '<button type="button" class="fav-del" title="' + escHtml(t('favRemove')) + '">&times;</button></a>';
-      } else {
-        html += '<span class="fav-item" data-name="' + escHtml(it.name) + '" title="' + escHtml(t('favCopyHint')) + '">' +
-          inner + '<button type="button" class="fav-del" title="' + escHtml(t('favRemove')) + '">&times;</button></span>';
-      }
+      // 交互元素不允许互相嵌套（<a> 内不可放 <button>），
+      // 故外层为容器 div，内部分别为「直达链接/标题」与「删除按钮」两个兄弟节点。
+      var linkAttr = it.url
+        ? '<a class="fav-link" href="' + escHtml(it.url) + '" target="_blank" rel="noopener noreferrer">' + inner + '</a>'
+        : '<span class="fav-link" title="' + escHtml(t('favCopyHint')) + '">' + inner + '</span>';
+      html += '<div class="fav-item" data-name="' + escHtml(it.name) + '">' +
+        linkAttr +
+        '<button type="button" class="fav-del" title="' + escHtml(t('favRemove')) + '">&times;</button></div>';
     }
     listEl.innerHTML = html;
     var byName2 = byName;
@@ -377,6 +394,11 @@
           if (!found) return;
           if (found.url) {
             bumpStat(found.name); // 侧边栏打开同样计入使用统计
+            // 若点击落在容器空白处（非链接本身），代为触发内部直达链接
+            var link = itemEl.querySelector('.fav-link');
+            if (link && link.tagName === 'A' && e.target !== link && !link.contains(e.target)) {
+              link.click();
+            }
           } else {
             e.preventDefault();
             copyText(found.name, found.name);

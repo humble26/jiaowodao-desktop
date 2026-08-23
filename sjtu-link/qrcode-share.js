@@ -37,13 +37,24 @@
    *  图片底部附名称（如有）与链接/内容文字，便于识别与分享 */
   function makeQrDataUrl(text, name) {
     if (!window.qrcode) return '';
-    // 默认 Byte 模式按 Latin-1 截断字符，中文会乱码；显式切到 UTF-8
-    if (window.qrcode.stringToBytesFuncs && window.qrcode.stringToBytesFuncs['UTF-8']) {
-      window.qrcode.stringToBytes = window.qrcode.stringToBytesFuncs['UTF-8'];
+    // 默认 Byte 模式按 Latin-1 截断字符，中文会乱码；显式切到 UTF-8。
+    // 该赋值会改写库的全局 stringToBytes，故在 finally 中恢复原函数，
+    // 避免影响其它调用方（可测纯逻辑或其它页面）。
+    var utf8Bytes = window.qrcode.stringToBytesFuncs && window.qrcode.stringToBytesFuncs['UTF-8'];
+    var originalBytes = window.qrcode.stringToBytes;
+    if (utf8Bytes) window.qrcode.stringToBytes = utf8Bytes;
+    try {
+      var qr = window.qrcode(0, 'M');
+      qr.addData(String(text));
+      qr.make();
+      return renderQrCanvas(qr, text, name);
+    } finally {
+      if (utf8Bytes) window.qrcode.stringToBytes = originalBytes;
     }
-    var qr = window.qrcode(0, 'M');
-    qr.addData(String(text));
-    qr.make();
+  }
+
+  /** 把二维码模块矩阵绘制成带底部信息条的 PNG dataURL。 */
+  function renderQrCanvas(qr, text, name) {
     var n = qr.getModuleCount();
     var quiet = 4;
     var scale = 8;
@@ -74,6 +85,7 @@
       }
     }
     var maxW = qrPx - labelPad * 2;
+    /** 按最大宽度逐字截断文本并追加省略号，避免文字溢出图片 */
     function fit(t, size) {
       ctx.font = size + 'px "Segoe UI", "Microsoft YaHei", sans-serif';
       var shown = t;

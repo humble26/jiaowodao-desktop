@@ -61,6 +61,15 @@
     return resolveText(dLang, key, typeof i18n !== 'undefined' ? i18n : null);
   }
 
+  /** 富文本渲染安全化：先 HTML 转义，再仅放行白名单标签 <br> 与 <b>/</b>。 */
+  function safeRichText(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+      .replace(/&lt;br&gt;/g, '<br>')
+      .replace(/&lt;b&gt;/g, '<b>').replace(/&lt;\/b&gt;/g, '</b>');
+  }
+
   function buildModal() {
     mask = document.createElement('div');
     mask.className = 'disclaimer-mask';
@@ -118,7 +127,9 @@
     document.getElementById('disclaimer-title').textContent = dlText('disclaimerTitle');
     document.getElementById('disclaimer-tag').textContent = dlText('disclaimerTag');
     document.getElementById('disclaimer-alert').textContent = dlText('disclaimerAlert');
-    document.getElementById('disclaimer-body-text').innerHTML = dlText('disclaimerBody');
+    // 正文先整体转义再仅放行白名单标签（<br> / <b> / </b>），
+    // 既保留排版，又杜绝文案注入为 XSS。
+    document.getElementById('disclaimer-body-text').innerHTML = safeRichText(dlText('disclaimerBody'));
     document.getElementById('disclaimer-never-label').textContent = dlText('disclaimerNever');
     document.getElementById('disclaimer-exit').textContent = dlText('disclaimerExit');
     document.getElementById('disclaimer-agree').textContent = dlText('disclaimerAgree');

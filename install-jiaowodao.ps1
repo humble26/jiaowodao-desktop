@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   交我导 · 上海交通大学导航（桌面版）安装脚本
 .DESCRIPTION
@@ -408,7 +408,7 @@ foreach ($lnk in @((Join-Path $DesktopDir $LnkName), (Join-Path $smDir $LnkName)
 # ---------- 安装信息 ----------
 $info = @{
     app         = 'jiaowodao'
-    version     = '2.4.4'
+    version     = '2.5.0'
     mode        = $Mode
     installDir  = $InstallDir
     source      = $Source

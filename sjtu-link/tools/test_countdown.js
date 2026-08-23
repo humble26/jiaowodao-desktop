@@ -16,6 +16,11 @@ assert.strictEqual(cd.daysUntil('2026-08-15', today), 0);
 assert.strictEqual(cd.daysUntil('2026-08-14', today), -1);
 assert.strictEqual(cd.daysUntil('2026-10-01', today), 47);
 assert.strictEqual(cd.daysUntil('bad-date', today), null);
+// 非法日期不得被 Date.UTC 静默进位成错误天数（rollover 回归防护）
+assert.strictEqual(cd.daysUntil('2026-99-99', today), null);
+assert.strictEqual(cd.daysUntil('2026-02-30', today), null);
+assert.strictEqual(cd.daysUntil('2026-13-01', today), null);
+assert.strictEqual(cd.daysUntil('2026-00-10', today), null);
 
 // nextEvent：最近的下一个未来日程
 const events = [

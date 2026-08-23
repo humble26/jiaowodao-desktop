@@ -32,10 +32,17 @@
   ];
 
   function daysUntil(dateStr, today) {
-    var d = new Date(String(dateStr) + 'T00:00:00');
-    if (isNaN(d.getTime())) return null;
-    var t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    return Math.round((d - t) / 86400000);
+    // 用 UTC 归一化计算整日差，避免本地时区/夏令时在跨午夜附近产生 ±1 天偏差
+    var parts = String(dateStr || '').split('-').map(Number);
+    if (parts.length < 3 || parts.some(isNaN)) return null;
+    var y = parts[0], m = parts[1] - 1, d = parts[2];
+    var target = Date.UTC(y, m, d);
+    // 组件回读校验：Date.UTC 对非法日期（如 2026-99-99 / 2月30日）会静默进位，
+    // 回读不一致时按无效日期处理，避免算出一个错误的倒计时天数
+    var chk = new Date(target);
+    if (chk.getUTCFullYear() !== y || chk.getUTCMonth() !== m || chk.getUTCDate() !== d) return null;
+    var t = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.round((target - t) / 86400000);
   }
 
   function nextEvent(events, today, lookahead) {
