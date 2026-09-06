@@ -58,6 +58,8 @@ jobs:
           Copy-Item -Recurse -Force 'sjtu-link' "$stage\sjtu-link"
           Copy-Item -Force 'install-jiaowodao.ps1','安装交我导.cmd','安装指南.md','安装指南.txt','CHANGELOG.md' $stage
           Copy-Item -Force 'dist\Jiaowodao.exe' "$stage\sjtu-link\Jiaowodao.exe"
+          # 安装包 zip 已随仓库跟踪存在，CreateFromDirectory 不允许覆盖，需先删除
+          Remove-Item -Force '交我导-桌面版安装包.zip' -ErrorAction SilentlyContinue
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, '交我导-桌面版安装包.zip', [System.IO.Compression.CompressionLevel]::Optimal, $false, [System.Text.Encoding]::UTF8)
 
