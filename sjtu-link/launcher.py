@@ -35,12 +35,18 @@ _CLEAR_RETRY_DELAY = 0.4  # 秒
 
 
 def _frontend_files():
-    """应用目录内决定前端内容的关键文件（html/js/css）。"""
+    """应用目录内决定前端内容的关键文件（html/js/css，含 data/ 数据文件）。"""
     files = [INDEX_HTML]
     try:
         for name in os.listdir(APP_DIR):
-            if name.endswith(('.js', '.css')):
-                files.append(os.path.join(APP_DIR, name))
+            p = os.path.join(APP_DIR, name)
+            if os.path.isfile(p) and name.endswith(('.js', '.css')):
+                files.append(p)
+        data_dir = os.path.join(APP_DIR, 'data')
+        if os.path.isdir(data_dir):
+            for name in os.listdir(data_dir):
+                if name.endswith(('.js', '.css')):
+                    files.append(os.path.join(data_dir, name))
     except Exception:
         pass
     return files

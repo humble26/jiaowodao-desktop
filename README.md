@@ -1,6 +1,6 @@
 ﻿# 交我导 · 上海交通大学导航（桌面版）
 
-> **当前版本：v2.5.0**（2026-08-22）｜ 完整更新日志见 [CHANGELOG.md](CHANGELOG.md)
+> **当前版本：v2.5.1**（2026-09-06）｜ 完整更新日志见 [CHANGELOG.md](CHANGELOG.md)
 
 上海交通大学常用网站 / 公众号 / 社团导航的桌面应用，UI 仿照网页版导航站
 [交我导 sjtu-links.pages.dev](https://sjtu-links.pages.dev/) 的风格制作：

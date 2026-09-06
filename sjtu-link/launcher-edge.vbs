@@ -21,7 +21,7 @@ End If
 ' file:// URL
 Dim fso2, ver
 Set fso2 = CreateObject("Scripting.FileSystemObject")
-ver = "0"
+ver = 0
 ' 版本参数 = 目录内全部 html/js/css 文件的最大修改时间（任一文件更新即换 URL）
 Dim fItem, fVer
 If fso2.FolderExists(appDir) Then
@@ -30,7 +30,7 @@ If fso2.FolderExists(appDir) Then
         ext = LCase(fso2.GetExtensionName(fItem.Name))
         If ext = "html" Or ext = "js" Or ext = "css" Then
             fVer = Int(fItem.DateLastModified * 86400)
-            If fVer > CLng(ver) Then ver = CStr(fVer)
+            If fVer > ver Then ver = fVer
         End If
     Next
 End If

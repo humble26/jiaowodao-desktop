@@ -250,20 +250,33 @@
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
       if (card.querySelector('.card-star')) continue;
-      var nameEl = card.querySelector('.name');
-      var name = nameEl ? nameEl.textContent : '';
-      var star = document.createElement('button');
-      star.type = 'button';
+      // 优先用卡片 data-name（中文原名）作为收藏键，避免界面语言切换后失配
+      var name = card.getAttribute('data-name');
+      if (!name) {
+        var nameEl = card.querySelector('.name');
+        name = nameEl ? nameEl.textContent : '';
+      }
+      // 网站卡片本身是 <a>，内部嵌 <button> 属无效 HTML，故用 span[role=button]
+      var star = document.createElement('span');
       star.className = 'card-star';
+      star.setAttribute('role', 'button');
+      star.setAttribute('tabindex', '0');
       star.title = t('favAdd');
       star.setAttribute('aria-label', t('favAdd'));
       star.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.1 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8L12 3.6Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" fill="none"/></svg>';
+      star.setAttribute('data-name', name);
       star.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
         toggleFav(this.getAttribute('data-name'));
       });
-      star.setAttribute('data-name', name);
+      star.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleFav(this.getAttribute('data-name'));
+        }
+      });
       var top = card.querySelector('.top');
       if (top) top.appendChild(star);
       else card.appendChild(star);
@@ -283,7 +296,6 @@
   }
 
   /* ---------- 收藏侧边栏 ---------- */
-  var sideEl = null;
 
   /** 侧栏默认展开；用户收起后存 localStorage 以便下次保持 */
   function sideOpen() {
@@ -369,10 +381,12 @@
       var badge = it.type === 'wechat' ? t('tabs')[2] : it.type === 'club' ? t('tabs')[3] : t('tabs')[1];
       var avatarBg = it.type === 'wechat' ? '#267843' : it.type === 'club' ? '#d8b66a' : (it.custom ? '#6f0922' : '#9d1233');
       var avatarColor = it.type === 'club' ? '#5a3d06' : '#ffffff';
-      var first = (String(it.name).trim().charAt(0) || '?').toUpperCase();
+      // 键为中文原名，显示名随界面语言
+      var displayName = (typeof getItemName === 'function') ? getItemName(it) : it.name;
+      var first = (String(displayName).trim().charAt(0) || '?').toUpperCase();
       var inner =
         '<span class="fav-avatar" style="background:' + avatarBg + ';color:' + avatarColor + '">' + escHtml(first) + '</span>' +
-        '<span class="fav-name">' + escHtml(it.name) + '</span>' +
+        '<span class="fav-name">' + escHtml(displayName) + '</span>' +
         '<span class="badge' + (it.type === 'wechat' ? ' wechat' : it.type === 'club' ? ' club' : '') + '">' + escHtml(badge) + '</span>';
       // 交互元素不允许互相嵌套（<a> 内不可放 <button>），
       // 故外层为容器 div，内部分别为「直达链接/标题」与「删除按钮」两个兄弟节点。
@@ -428,9 +442,13 @@
     if (!a) return;
     var card = a.closest ? a.closest('.card') : null;
     if (!card) return;
-    var nameEl = card.querySelector('.name');
-    if (!nameEl) return;
-    bumpStat(nameEl.textContent);
+    // 以 data-name（中文原名）计数，避免界面语言切换导致统计分裂
+    var name = card.getAttribute('data-name');
+    if (!name) {
+      var nameEl = card.querySelector('.name');
+      name = nameEl ? nameEl.textContent : '';
+    }
+    if (name) bumpStat(name);
   });
 
   /* ---------- 包装 renderGrid 实现装饰钩子 ---------- */
@@ -472,7 +490,46 @@
     onChanged: function (cb) { listeners.push(cb); }
   };
 
+  /* ---------- 旧数据迁移 ---------- */
+  // 历史版本曾以「界面语言显示名」作为收藏/统计键（英文界面下写入 name_en），
+  // 现统一为中文原名 item.name；此处把已存储的英文键归一并合并重复项。
+  function buildNameLookup() {
+    var lookup = {};
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it && it.name && it.name_en && it.name_en !== it.name) lookup[it.name_en] = it.name;
+    }
+    return lookup;
+  }
+
+  function migrateStoredKeys() {
+    try {
+      var lookup = buildNameLookup();
+      var favs = loadFavs(), favsChanged = false;
+      for (var i = 0; i < favs.length; i++) {
+        var c = lookup[favs[i]];
+        if (c && c !== favs[i]) { favs[i] = c; favsChanged = true; }
+      }
+      if (favsChanged) {
+        var uniq = [];
+        for (var j = 0; j < favs.length; j++) {
+          if (uniq.indexOf(favs[j]) < 0) uniq.push(favs[j]);
+        }
+        saveFavs(uniq);
+      }
+      var stats = loadStats(), merged = {}, statsChanged = false;
+      for (var k in stats) {
+        if (!Object.prototype.hasOwnProperty.call(stats, k)) continue;
+        var ck = lookup[k] || k;
+        merged[ck] = (merged[ck] || 0) + (stats[k] || 0);
+        if (ck !== k) statsChanged = true;
+      }
+      if (statsChanged) saveStats(merged);
+    } catch (e) { /* ignore */ }
+  }
+
   /* ---------- 初始化 ---------- */
+  migrateStoredKeys();
   snapshotOrder();
   syncCustom();
   renderGrid(); // 走包装（装饰星标）

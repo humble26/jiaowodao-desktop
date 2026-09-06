@@ -408,7 +408,7 @@ foreach ($lnk in @((Join-Path $DesktopDir $LnkName), (Join-Path $smDir $LnkName)
 # ---------- 安装信息 ----------
 $info = @{
     app         = 'jiaowodao'
-    version     = '2.5.0'
+    version     = '2.5.1'
     mode        = $Mode
     installDir  = $InstallDir
     source      = $Source

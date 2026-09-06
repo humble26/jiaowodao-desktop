@@ -408,7 +408,10 @@
   justify-content: center;
   border-radius: 4px;
   transition: color .15s, transform .1s;
+  user-select: none;
+  -webkit-user-select: none;
 }
+.card-star:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .card-star svg { width: 15px; height: 15px; }
 .card-star:hover { color: var(--sjtu-gold); transform: scale(1.12); }
 .card-star.on { color: var(--sjtu-gold); }

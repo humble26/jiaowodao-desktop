@@ -341,7 +341,6 @@
     query = t.toLowerCase();
     clearBtn.hidden = !query;
     visibleCount = 0;
-    currentPage = 1;
     renderGrid();
     updateCountDisplay();
     saveHistory(t);

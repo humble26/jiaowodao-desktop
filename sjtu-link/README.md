@@ -1,9 +1,9 @@
 ﻿# 交我导 · 上海交通大学导航（桌面版）
 
-> **当前版本：v2.5.0**（2026-08-22）｜ 完整更新日志见 [CHANGELOG.md](CHANGELOG.md)
+> **当前版本：v2.5.1**（2026-09-06）｜ 完整更新日志见 [CHANGELOG.md](CHANGELOG.md)
 > v1.0.0 为最初版（基础导航）；v2.0.0 加入搜索增强、数据在线更新、免责声明、设置面板、右键菜单；
 > v2.1.0 加入收藏夹、自定义链接、使用统计与常用排序、日程倒计时；
-> v2.2.0 加入二维码分享与收藏侧边栏；v2.3.0 修复二维码弹窗等缺陷、优化性能并增强分享体验；v2.4.0 二维码保存支持自选位置；v2.4.1 二维码图片附带链接文字；v2.4.2 二维码默认文件名按标题生成；v2.4.3 二维码图片含名称与链接；v2.4.4 重构缓存更新机制；v2.5.0 修复更新卡死/无效嵌套/排序/清空遗漏等稳定性问题。
+> v2.2.0 加入二维码分享与收藏侧边栏；v2.3.0 修复二维码弹窗等缺陷、优化性能并增强分享体验；v2.4.0 二维码保存支持自选位置；v2.4.1 二维码图片附带链接文字；v2.4.2 二维码默认文件名按标题生成；v2.4.3 二维码图片含名称与链接；v2.4.4 重构缓存更新机制；v2.5.0 修复更新卡死/无效嵌套/排序/清空遗漏等稳定性问题；v2.5.1 修复启动器溢出、提示遮挡、收藏语言失配，主网格搜索全面支持拼音/英文名。
 
 上海交通大学常用网站 / 公众号 / 社团导航的桌面应用，UI 仿照网页版导航站
 [交我导 sjtu-links.pages.dev](https://sjtu-links.pages.dev/) 的风格制作：
@@ -119,10 +119,15 @@ powershell -ExecutionPolicy Bypass -File .\install-edge.ps1     # Edge 应用模
 ```
 sjtu-link/
 ├── app.html                 # 应用主体（样式/逻辑内联，仿网页版）
-├── search-plus.js           # 搜索增强（预选栏/联想/历史/URL直达/快捷键）
-├── search-plus.css          # 搜索增强样式
-├── data-update.js           # 数据在线更新（自动检查/拼音再生成/缓存）
+├── search-plus.js / .css    # 搜索增强（预选栏/联想/历史/URL直达/快捷键）
+├── data-update.js           # 数据在线更新（自动检查/拼音再生成/缓存/超时保护）
 ├── disclaimer.js            # 免责声明弹窗（首次进入/页脚重开/退出应用）
+├── contextmenu.js           # 右键卡片菜单（复制标题/链接/名称，生成二维码）
+├── settings.js / .css       # 设置面板（字体/宠物/排序/自定义链接/日程/清数据/日志/关于）
+├── favorites.js             # 个人化模块（收藏夹/收藏侧栏/自定义链接/使用统计/常用排序）
+├── countdown.js             # 日程倒计时横幅（内置公共假期，可增删日程）
+├── qrcode.js                # 内置二维码生成库（MIT，Kazuhiko Arase）
+├── qrcode-share.js          # 二维码弹窗（扫码直达/复制链接/保存 PNG）
 ├── Jiaowodao.exe            # 单文件免依赖可执行程序（内含 Python 运行时）
 ├── CHANGELOG.md             # 版本更新日志（v1.0 功能说明 / v2.0 更新说明）
 ├── launcher.py              # Python 启动器（pywebview，回退 Edge 应用模式）
@@ -136,12 +141,20 @@ sjtu-link/
 │   └── pinyin-map.js        # 字符→拼音映射表（580 字，在线更新用）
 ├── tools/
 │   ├── enrich_data.py       # 数据拼音字段生成（pip install pypinyin）
+│   ├── sync_assets.py       # app.html 资源引用版本号（?v=）同步
+│   ├── make_icon.py         # 图标生成脚本（pip install pillow）
 │   ├── _extract.js          # 数据提取辅助（enrich_data.py 内部使用）
+│   ├── e2e-header-clicks.py # 页头三盒子点击 E2E（pywebview 环境）
 │   ├── test_search_core.js  # 搜索核心单元测试
 │   ├── test_search_realdata.js  # 真实数据搜索验证
 │   ├── test_update.js       # 在线更新逻辑测试（含真实网络 E2E）
 │   ├── test_disclaimer.js   # 免责声明核心逻辑测试
-│   └── make_icon.py         # 图标生成脚本（pip install pillow）
+│   ├── test_favorites.js    # 收藏/统计/自定义链接逻辑测试
+│   ├── test_settings.js     # 设置面板核心逻辑测试
+│   ├── test_countdown.js    # 倒计时核心逻辑测试
+│   ├── test_qrcode.js       # 二维码生成测试（输出 PNG 供解码验证）
+│   ├── test_qr_decode.py    # OpenCV 二维码解码验证（pip install opencv-python）
+│   └── test_cache_invalidate.py  # 启动器缓存失效机制测试
 └── README.md
 ```
 

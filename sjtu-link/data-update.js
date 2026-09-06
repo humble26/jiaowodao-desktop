@@ -165,8 +165,19 @@
     };
     var remaining = REMOTE_FILES.length;
     var failed = false;
+    var finished = false;
+    var timedOut = false;
+
+    function restoreLocal() {
+      window.JIAOWODAO_DATA = saved.data;
+      window.JIAOWODAO_META = saved.meta;
+      window.JIAOWODAO_CLUB_DATA = saved.clubs;
+      window.JIAOWODAO_CLUB_META = saved.clubMeta;
+    }
 
     function finish() {
+      if (finished) return;
+      finished = true;
       var remote = {
         data: window.JIAOWODAO_DATA,
         meta: window.JIAOWODAO_META,
@@ -174,10 +185,7 @@
         clubMeta: window.JIAOWODAO_CLUB_META
       };
       // 无论结果如何，先恢复本地数据（是否采用 remote 由调用方决定）
-      window.JIAOWODAO_DATA = saved.data;
-      window.JIAOWODAO_META = saved.meta;
-      window.JIAOWODAO_CLUB_DATA = saved.clubs;
-      window.JIAOWODAO_CLUB_META = saved.clubMeta;
+      restoreLocal();
       onDone(failed ? null : remote);
     }
 
@@ -186,6 +194,8 @@
       s.src = REMOTE_BASE + encodeURIComponent(fname) + '?t=' + Date.now();
       s.async = false;
       s.onload = function () {
+        // 超时后才加载完成的脚本：其执行已改写全局数据，需再次恢复本地值
+        if (timedOut) restoreLocal();
         if (--remaining === 0) finish();
       };
       s.onerror = function () {
@@ -194,6 +204,15 @@
       };
       document.head.appendChild(s);
     });
+
+    // 超时保护：请求挂起（网络半开）时 script 永不触发 onload/onerror，
+    // 若不兜底结束，checkUpdate 的 checking 将永久为 true（更新功能卡死）。
+    setTimeout(function () {
+      if (finished) return;
+      timedOut = true;
+      failed = true;
+      finish();
+    }, 15000);
   }
 
   /** 应用更新：增强拼音 -> 更新全局 -> 缓存 -> 更新日志 -> 重渲染 */

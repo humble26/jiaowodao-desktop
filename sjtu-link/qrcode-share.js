@@ -169,6 +169,11 @@
       a.remove();
       showToast(t('qrSavedFallback'));
     });
+    renderTexts();
+  }
+
+  /** 弹窗文案每次打开时按当前语言刷新（与设置面板/收藏侧栏的语言同步行为一致） */
+  function renderTexts() {
     document.getElementById('qr-title').textContent = t('qrTitle');
     document.getElementById('qr-copy').textContent = t('qrCopy');
     document.getElementById('qr-download').textContent = t('qrDownload');
@@ -194,6 +199,7 @@
 
   function show(info) {
     if (!mask) buildModal();
+    renderTexts();
     var text = (info && (info.url || info.title)) || '';
     if (!text) return;
     currentText = text;

@@ -289,73 +289,9 @@
     #toast{
       position:fixed;left:50%;bottom:28px; z-index:200; transform:translate(-50%,12px);padding:9px 14px;
       border-radius:5px;background:#24262a;color:#fff; font-size:.82rem;opacity:0;pointer-events:none;
-      transition:.18s;z-index:20;
+      transition:.18s;
     }
     #toast.show{opacity:1;transform:translate(-50%,0);}
-
-    /* 分页样式 */
-    .pagination-container {
-      margin-top: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .page-btn {
-      min-width: 32px;
-      height: 32px;
-      padding: 0 8px;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: var(--card);
-      color: var(--ink);
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-      transition: 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .page-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .page-btn:disabled {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-    .page-input {
-      width: 48px;
-      height: 32px;
-      padding: 0 4px;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: var(--card);
-      color: var(--ink);
-      font-size: 0.85rem;
-      text-align: center;
-      -moz-appearance: textfield;
-    }
-    .page-input::-webkit-inner-spin-button,
-    .page-input::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .page-info {
-      font-size: 0.85rem;
-      color: var(--sub);
-      user-select: none;
-    }
-    .page-size-select {
-      height: 32px;
-      padding: 0 24px 0 8px;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: var(--card);
-      color: var(--ink);
-      font-size: 0.82rem;
-      cursor: pointer;
-      outline: none;
-    }
 
     @media (max-width:640px){
       .header-controls { top: 14px; right: 10px; gap: 4px; }
@@ -379,9 +315,6 @@
       .card{min-height:146px;padding:12px 13px;}
       .club-card{min-height:190px;}
       .club-action{padding-left:7px;padding-right:7px;font-size:.68rem;}
-      .pagination-container { gap: 4px; }
-      .page-btn { min-width: 28px; height: 28px; }
-      .page-input { width: 40px; height: 28px; font-size: 0.8rem; }
       .reset-filters { right: 0; }
     }
     /* ---------- 免责声明弹窗 ---------- */
@@ -563,8 +496,8 @@
 
     }
   </style>
-<link rel="stylesheet" href="search-plus.css?v=2.5.0">
-<link rel="stylesheet" href="settings.css?v=2.5.0">
+<link rel="stylesheet" href="search-plus.css?v=2.5.1">
+<link rel="stylesheet" href="settings.css?v=2.5.1">
 </head>
 <body>
 <script>
@@ -722,8 +655,8 @@
 </div>
 <button id="pet-recall-btn" class="hidden-recall" aria-label="召唤导导" title="召唤导导">🐦</button>
 
-<script src="data/jiaowodao-data.js?v=2.5.0"></script>
-<script src="data/jiaowodao-clubs.js?v=2.5.0"></script>
+<script src="data/jiaowodao-data.js?v=2.5.1"></script>
+<script src="data/jiaowodao-clubs.js?v=2.5.1"></script>
 <script>
   // 数据在线更新缓存优先：若本地存储中有更新版数据，覆盖磁盘文件
   (function () {
@@ -767,11 +700,6 @@ const i18n = {
     themeAuto: '跟随系统',
     themeLight: '浅色',
     themeDark: '深色',
-    firstPage: '首页',
-    prevPage: '上一页',
-    nextPage: '下一页',
-    lastPage: '末页',
-    pageSizeLabel: '每页显示',
     loadMoreHint: '向下滚动查看更多',
     presetLabel: '热门直达',
     suggTitle: '搜索建议',
@@ -920,11 +848,6 @@ const i18n = {
     themeAuto: 'Auto',
     themeLight: 'Light',
     themeDark: 'Dark',
-    firstPage: 'First',
-    prevPage: 'Previous',
-    nextPage: 'Next',
-    lastPage: 'Last',
-    pageSizeLabel: 'Per page',
     loadMoreHint: 'Scroll down to load more',
     presetLabel: 'Quick Access',
     suggTitle: 'Suggestions',
@@ -1096,7 +1019,6 @@ function applyLanguage(lang) {
   }
   updateClubSourceNote();
   if (window.renderSearchUI) window.renderSearchUI();
-  currentPage = 1;
   renderChips();
   renderGrid();
   updateCountDisplay();
@@ -1114,10 +1036,7 @@ themeSelect.addEventListener('change', (e) => {
   localStorage.setItem('theme', theme);
 });
 
-// ====== 分页相关变量 ======
-let currentPage = 1;
-let pageSize = 10;
-const pageSizeOptions = [10, 20, 50, 100];
+// ====== 滚动加载相关变量 ======
 let visibleCount = 0;
 let loadMoreObserver;
 
@@ -1134,7 +1053,6 @@ const dataErrorEl = document.getElementById("data-error");
 const searchInput = document.getElementById("search");
 const clearSearchButton = document.getElementById("clear-search");
 const resetFiltersButton = document.getElementById("reset-filters");
-const paginationContainer = document.getElementById("pagination-container");
 const loadMoreHintEl = document.getElementById("load-more-hint");
 const loadMoreSentinelEl = document.getElementById("load-more-sentinel");
 const clubSourceNoteEl = document.getElementById("club-source-note");
@@ -1190,14 +1108,24 @@ function getVisibleQQNote(item) {
   return item.qqNote && item.qqNote !== '关注公众号可见' ? item.qqNote : '';
 }
 
+function enInitials(text) {
+  var words = String(text || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  var out = '';
+  for (var i = 0; i < words.length; i++) out += words[i].charAt(0);
+  return out;
+}
+// 与 search-plus.js 的 searchItemText 字段保持一致：
+// 拼音/首字母/英文名/英文缩写同样参与主网格过滤，避免"下拉有候选、网格 0 结果"的割裂
 function getItemSearchText(item) {
   return [
-    getItemName(item),
-    getItemCat(item),
-    getItemDesc(item),
+    item.name, item.name_en,
+    item.cat, item.cat_en,
+    item.desc, item.desc_en,
     item.wechatName,
     Array.isArray(item.qqGroups) ? item.qqGroups.join(' ') : '',
-    getVisibleQQNote(item)
+    getVisibleQQNote(item),
+    item.py, item.pyi,
+    enInitials(item.name_en)
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
@@ -1241,7 +1169,6 @@ function renderChips() {
     btn.addEventListener("click", () => {
       activeCat = cat.key;
       visibleCount = 0;
-      currentPage = 1;
       renderChips();
       renderGrid();
     });
@@ -1260,7 +1187,6 @@ document.querySelectorAll(".type-tab").forEach(tab => {
     activeType = tab.dataset.type;
     if (!getVisibleCats().some(cat => cat.key === activeCat)) activeCat = "全部";
     visibleCount = 0;
-    currentPage = 1;
     updateClubSourceNote();
     renderChips();
     renderGrid();
@@ -1271,7 +1197,6 @@ searchInput.addEventListener("input", () => {
   query = searchInput.value.trim().toLowerCase();
   clearSearchButton.hidden = !query;
   visibleCount = 0;
-  currentPage = 1;
   renderGrid();
 });
 clearSearchButton.addEventListener("click", () => {
@@ -1280,7 +1205,6 @@ clearSearchButton.addEventListener("click", () => {
   clearSearchButton.hidden = true;
   searchInput.focus();
   visibleCount = 0;
-  currentPage = 1;
   renderGrid();
 });
 resetFiltersButton.addEventListener("click", () => {
@@ -1294,7 +1218,6 @@ resetFiltersButton.addEventListener("click", () => {
     t.setAttribute("aria-selected", String(t.dataset.type === "all"));
   });
   visibleCount = 0;
-  currentPage = 1;
   updateClubSourceNote();
   renderChips();
   renderGrid();
@@ -1377,6 +1300,8 @@ function renderGrid() {
   pageItems.forEach(item => {
     const card = document.createElement(item.type === "website" ? "a" : "article");
     card.className = "card" + (item.type === "club" ? " club-card" : "");
+    // 稳定标识：收藏/统计以中文原名 data-name 为键，不随界面语言（name_en）变化
+    card.dataset.name = item.name;
     if (item.type === "website") {
       card.href = item.url;
       card.target = "_blank";
@@ -1462,134 +1387,6 @@ function renderGrid() {
     }
     gridEl.appendChild(card);
   });
-}
-
-function renderPagination() {
-  paginationContainer.innerHTML = "";
-  const filtered = getFilteredItems();
-  const totalPages = Math.ceil(filtered.length / pageSize);
-
-  // 首页按钮
-  const firstBtn = document.createElement("button");
-  firstBtn.className = "page-btn";
-  firstBtn.title = t('firstPage');
-  firstBtn.setAttribute("aria-label", t('firstPage'));
-  firstBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-5-5 5-5"/><path d="M18 17l-5-5 5-5"/></svg>`;
-  firstBtn.disabled = currentPage <= 1;
-  firstBtn.addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage = 1;
-      renderGrid();
-      renderPagination();
-    }
-  });
-  paginationContainer.appendChild(firstBtn);
-
-  // 上一页按钮
-  const prevBtn = document.createElement("button");
-  prevBtn.className = "page-btn";
-  prevBtn.title = t('prevPage');
-  prevBtn.setAttribute("aria-label", t('prevPage'));
-  prevBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
-  prevBtn.disabled = currentPage <= 1;
-  prevBtn.addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage--;
-      renderGrid();
-      renderPagination();
-    }
-  });
-  paginationContainer.appendChild(prevBtn);
-
-  // 页码输入框
-  const input = document.createElement("input");
-  input.type = "number";
-  input.className = "page-input";
-  input.min = 1;
-  input.max = totalPages;
-  input.value = currentPage;
-  input.setAttribute("aria-label", "页码");
-  const updatePageFromInput = () => {
-    let val = parseInt(input.value, 10);
-    if (isNaN(val) || val < 1) val = 1;
-    if (val > totalPages) val = totalPages;
-    input.value = val;
-    if (val !== currentPage) {
-      currentPage = val;
-      renderGrid();
-      renderPagination();
-    }
-  };
-  input.addEventListener("change", updatePageFromInput);
-  input.addEventListener("blur", updatePageFromInput);
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      updatePageFromInput();
-      input.blur();
-    }
-  });
-  paginationContainer.appendChild(input);
-
-  // 页码信息
-  const info = document.createElement("span");
-  info.className = "page-info";
-  info.textContent = "/ " + totalPages;
-  paginationContainer.appendChild(info);
-
-  // 下一页按钮
-  const nextBtn = document.createElement("button");
-  nextBtn.className = "page-btn";
-  nextBtn.title = t('nextPage');
-  nextBtn.setAttribute("aria-label", t('nextPage'));
-  nextBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`;
-  nextBtn.disabled = currentPage >= totalPages;
-  nextBtn.addEventListener("click", () => {
-    if (currentPage < totalPages) {
-      currentPage++;
-      renderGrid();
-      renderPagination();
-    }
-  });
-  paginationContainer.appendChild(nextBtn);
-
-  // 末页按钮
-  const lastBtn = document.createElement("button");
-  lastBtn.className = "page-btn";
-  lastBtn.title = t('lastPage');
-  lastBtn.setAttribute("aria-label", t('lastPage'));
-  lastBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5-5"/><path d="M6 17l5-5-5-5"/></svg>`;
-  lastBtn.disabled = currentPage >= totalPages;
-  lastBtn.addEventListener("click", () => {
-    if (currentPage < totalPages) {
-      currentPage = totalPages;
-      renderGrid();
-      renderPagination();
-    }
-  });
-  paginationContainer.appendChild(lastBtn);
-
-  // 每页显示
-  const sizeLabel = document.createElement("span");
-  sizeLabel.style.fontSize = "0.82rem";
-  sizeLabel.style.color = "var(--sub)";
-  sizeLabel.textContent = t('pageSizeLabel') + ": ";
-  const sizeSelect = document.createElement("select");
-  sizeSelect.className = "page-size-select";
-  pageSizeOptions.forEach(opt => {
-    const option = document.createElement("option");
-    option.value = opt;
-    option.textContent = opt;
-    if (opt === pageSize) option.selected = true;
-    sizeSelect.appendChild(option);
-  });
-  sizeSelect.addEventListener("change", (e) => {
-    pageSize = parseInt(e.target.value, 10);
-    currentPage = 1;
-    renderGrid();
-    renderPagination();
-  });
-  paginationContainer.appendChild(sizeLabel);
-  paginationContainer.appendChild(sizeSelect);
 }
 
 document.querySelector('.type-tab[data-type="all"]').setAttribute("aria-selected", "true");
@@ -1761,6 +1558,7 @@ renderGrid();
       wrapper.style.right = 'auto'; wrapper.style.bottom = 'auto';
       requestAnimationFrame(() => {
         wrapper.classList.remove('flying-back');
+        void wrapper.offsetWidth; // 强制 reflow，确保移除-重加能让过渡从头播放
         wrapper.classList.add('flying-back');
         wrapper.style.transition = 'transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.5s ease';
         wrapper.style.transform = 'translateX(0) translateY(0)';
@@ -1963,16 +1761,16 @@ renderGrid();
 })();
 </script>
 
-<script src="search-plus.js?v=2.5.0"></script>
-<script src="data/pinyin-map.js?v=2.5.0"></script>
-<script src="data-update.js?v=2.5.0"></script>
-<script src="disclaimer.js?v=2.5.0"></script>
-<script src="contextmenu.js?v=2.5.0"></script>
-<script src="settings.js?v=2.5.0"></script>
-<script src="favorites.js?v=2.5.0"></script>
-<script src="countdown.js?v=2.5.0"></script>
-<script src="qrcode.js?v=2.5.0"></script>
-<script src="qrcode-share.js?v=2.5.0"></script>
+<script src="search-plus.js?v=2.5.1"></script>
+<script src="data/pinyin-map.js?v=2.5.1"></script>
+<script src="data-update.js?v=2.5.1"></script>
+<script src="disclaimer.js?v=2.5.1"></script>
+<script src="contextmenu.js?v=2.5.1"></script>
+<script src="settings.js?v=2.5.1"></script>
+<script src="favorites.js?v=2.5.1"></script>
+<script src="countdown.js?v=2.5.1"></script>
+<script src="qrcode.js?v=2.5.1"></script>
+<script src="qrcode-share.js?v=2.5.1"></script>
 
 <script>
   // 桌面版：站外链接交给系统默认浏览器打开

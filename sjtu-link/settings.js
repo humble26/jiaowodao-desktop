@@ -21,9 +21,33 @@
   ];
 
   /* ---------- 版本与更新说明 ---------- */
-  var VERSION = '2.5.0';
-  var RELEASE_DATE = '2026-08-22';
+  var VERSION = '2.5.1';
+  var RELEASE_DATE = '2026-09-06';
   var CHANGELOG = [
+    {
+      ver: '2.5.1',
+      date: '2026-09-06',
+      zh: [
+        '修复：Edge 免安装启动器（launcher-edge.vbs）计算版本参数时整数溢出，双击必弹「溢出」错误；现改为数值直接比较',
+        '修复：提示 toast 的 z-index 重复定义，提示被设置面板/二维码弹窗/收藏侧栏遮挡',
+        '修复：收藏与使用统计以界面语言显示名为键，切换语言后收藏失踪、统计分裂；现统一以中文原名为稳定标识，旧数据自动迁移合并',
+        '修复：主网格搜索不支持拼音/首字母/英文名，与联想下拉结果割裂；现两侧搜索字段完全一致',
+        '修复：二维码弹窗文案不随应用语言切换刷新',
+        '修复：数据在线更新在请求挂起时永久无响应；新增 15 秒超时保护，迟到脚本不再污染本地数据',
+        '修复：网站卡片星标仍是 <a> 内嵌 <button> 的无效嵌套；改为 span[role=button] 并支持键盘操作',
+        '清理：移除未启用的分页死代码（脚本/样式/文案）；启动器缓存失效监控纳入 data/ 数据文件；README 目录结构补全'
+      ],
+      en: [
+        'Fix: the Edge launcher (launcher-edge.vbs) overflowed computing its cache-busting version and crashed on every launch; now uses plain numeric comparison',
+        'Fix: duplicated toast z-index kept notifications beneath the settings panel, QR dialog and favorites sidebar',
+        'Fix: favorites and usage stats were keyed by the UI-language display name and broke after switching languages; now keyed by the stable Chinese name, with automatic migration of stored data',
+        'Fix: the main grid search ignored pinyin/initials/English names and disagreed with the suggestion dropdown; both sides now share the same searchable fields',
+        'Fix: QR dialog texts now refresh with the app language on each open',
+        'Fix: online data update could hang forever on a stalled request; a 15s timeout now aborts cleanly and late-arriving scripts no longer clobber local data',
+        'Fix: the card star was still an invalid <button> inside <a>; now a span[role=button] with keyboard support',
+        'Chore: removed unused pagination code (script/CSS/i18n); launcher cache invalidation now also watches data/*.js; README file tree completed'
+      ]
+    },
     {
       ver: '2.5.0',
       date: '2026-08-22',
@@ -553,7 +577,7 @@
       return;
     }
     var html = '';
-    list.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (ev) {
+    list.slice().sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); }).forEach(function (ev) {
       html += '<div class="link-row">' +
         '<span class="link-row-name">' + escHtml(ev.name) + '</span>' +
         '<span class="link-row-url">' + escHtml(ev.date) + '</span>' +
@@ -675,7 +699,6 @@
   // 暴露给 data-update 的日志读写（避免循环依赖）
   window.jwdReadUpdateLog = function () {
     try {
-      var s = document.createElement('script');
       // data-update.js 已加载，直接读其存储
       var raw = (typeof localStorage !== 'undefined' && localStorage.getItem('jiaowodao_update_log')) || '';
       var arr = JSON.parse(raw);
@@ -697,12 +720,17 @@
   function refreshIfOpen() {
     if (mask && mask.classList.contains('show')) renderPanel();
   }
-  var subscribed = false;
+  var subscribedPersonal = false, subscribedCountdown = false;
   function subscribePersonal() {
-    if (subscribed) return;
-    if (window.JWD_PERSONAL) window.JWD_PERSONAL.onChanged(refreshIfOpen);
-    if (window.JWD_COUNTDOWN) window.JWD_COUNTDOWN.onChanged(refreshIfOpen);
-    subscribed = !!(window.JWD_PERSONAL && window.JWD_COUNTDOWN);
+    // 分别记录订阅状态：某个模块缺失时不重复给另一个挂监听
+    if (!subscribedPersonal && window.JWD_PERSONAL) {
+      window.JWD_PERSONAL.onChanged(refreshIfOpen);
+      subscribedPersonal = true;
+    }
+    if (!subscribedCountdown && window.JWD_COUNTDOWN) {
+      window.JWD_COUNTDOWN.onChanged(refreshIfOpen);
+      subscribedCountdown = true;
+    }
   }
   show = (function (orig) {
     return function () {
