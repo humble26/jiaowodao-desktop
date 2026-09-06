@@ -16,6 +16,10 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      # Windows runner 默认 stdout 编码（cp1252）无法打印脚本中的中文提示
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
     steps:
       - uses: actions/checkout@v4
 
@@ -30,17 +34,21 @@ jobs:
 
       - name: 生成数据与资源版本
         run: |
-          python tools/enrich_data.py
-          python tools/sync_assets.py
+          python sjtu-link/tools/enrich_data.py
+          python sjtu-link/tools/sync_assets.py
 
       - name: 运行测试
         run: |
-          node --version
-          python -m PyInstaller --version
+          node sjtu-link/tools/test_search_core.js
+          node sjtu-link/tools/test_search_realdata.js
+          node sjtu-link/tools/test_disclaimer.js
+          node sjtu-link/tools/test_favorites.js
+          node sjtu-link/tools/test_settings.js
+          node sjtu-link/tools/test_countdown.js
 
       - name: 打包单文件 exe
         run: |
-          python -m PyInstaller --noconsole --onefile --name Jiaowodao launcher.py
+          python -m PyInstaller --noconsole --onefile --name Jiaowodao sjtu-link/launcher.py
 
       - name: 组装 zip
         shell: pwsh
